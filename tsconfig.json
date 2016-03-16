@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es3",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "module": "commonjs",
+    "outDir": "build"
+  },
+  "files": [
+    "src/explode.ts",
+    "src/bytebuff.ts",
+    "src/unzip.ts",
+    "src/inflate.ts",
+    "src/ptr.ts"
+  ]
+}

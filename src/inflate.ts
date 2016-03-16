@@ -3,6 +3,7 @@ import Ptr from './ptr';
 /* If BMAX needs to be larger than 16, then h and x[] should be ulg. */
 const BMAX = 16;         /* maximum bit length of any code (16 for explode) */
 const N_MAX = 288;       /* maximum number of codes in any set */
+const INVALID_CODE = 99;
 
 export interface huft {
   e: number;               /* [byte] number of extra bits or operation */
@@ -12,22 +13,15 @@ export interface huft {
                     /* pointer to next level of table */
 }
 
-export function flush(slide: Uint8Array, out: Uint8Array, outcnt: number, w: number): number {
-  let n: number;
+export function flush(slide: Uint8Array, out: Uint8Array, outIndex: number, size: number): number {
   let OUTBUFSIZ = out.byteLength;
-  let slideI: number = 0;
-  while (w) {
-    n = (n = OUTBUFSIZ - outcnt) < w ? n : w;
-    out.set(slide.subarray(slideI, slideI + n), outcnt);
-    outcnt += n;
-    // if ((outcnt += n) === OUTBUFSIZ) {
-      // Buffer is full. TODO: Support streaming decompression.
-    // }
-    slideI += n;
-    w -= n;
+  if (outIndex + size > OUTBUFSIZ) {
+    return -1;
+  } else {
+    out.set(slide.subarray(0, size), outIndex);
   }
 
-  return outcnt;
+  return 0;
 }
 
 function create_empty_huft_table(n: number): huft[] {
@@ -72,13 +66,15 @@ function clone_huft(a: huft, b: huft) {
 export function huft_build(b: number[], n: number, s: number, d: number[], e: number[], output: { t: Ptr<huft>, m: number }): number {
   let a: number;          /* counter for codes of length k */
   let c = new Uint32Array(BMAX+1); /* bit length count table */
+  let el: number;         /* length of EOB code (value 256) */
   let f: number;          /* i repeats in table every f entries */
   let g: number;          /* maximum code length */
   let h: number;          /* table level */
   let i: number;          /* counter, current code */
   let j: number;          /* counter */
   let k: number;          /* number of bits in current code */
-  let l: number;          /* bits per table (returned in m) */
+  let lx = new Int32Array(BMAX + 1); /* memory for l[-1..BMAX-1] */
+  let l = new Ptr(lx, 1); /* stack of bits per table */
   let p = new Ptr<number>(null, null); /* pointer into c[], b[], or v[] */
   let q = new Ptr<huft>(null, null); /* points to current table */
   let r: huft = {         /* table entry for structure assignment */
@@ -98,13 +94,14 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
 
   /* Generate counts for each bit length */
   // Unneeded, since typed arrays are initialized to 0.
+  el = n > 256 ? b[256] : BMAX; /* set length of EOB code, if any */
   // memset(c, 0, sizeof(c));
   p.reset(b, 0);  i = n;
   do {
-    c[p.get()]++;                  /* assume all entries <= BMAX */
+    c[p.get()]++;               /* assume all entries <= BMAX */
     p.add(1);
   } while (--i);
-  if (c[0] == n)                /* null input--all zero length codes */
+  if (c[0] === n)               /* null input--all zero length codes */
   {
     t.reset(null, null);
     output.m = 0;
@@ -113,20 +110,18 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
 
 
   /* Find minimum and maximum length, bound *m by those */
-  l = output.m;
   for (j = 1; j <= BMAX; j++)
     if (c[j])
       break;
   k = j;                        /* minimum code length */
-  if (l < j)
-    l = j;
+  if (output.m < j)
+    output.m = j;
   for (i = BMAX; i; i--)
     if (c[i])
       break;
   g = i;                        /* maximum code length */
-  if (l > i)
-    l = i;
-  output.m = l;
+  if (output.m > i)
+    output.m = i;
 
 
   /* Adjust last length count to fill out codes, if needed */
@@ -149,19 +144,23 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
 
 
   /* Make a table of values in order of bit lengths */
+  // v is already zeroed
+  // memzero((char *)v, sizeof(v));
   p.reset(b, 0);  i = 0;
   do {
-    if ((j = p.get()) != 0)
+    if ((j = p.get()) !== 0)
       v[x[j]++] = i;
     p.add(1);
   } while (++i < n);
+  n = x[g];                     /* set n to length of v */
 
 
   /* Generate the Huffman codes and for each, make the table entries */
   x[0] = i = 0;                 /* first Huffman code is zero */
   p.reset(v, 0);                /* grab values in bit order */
   h = -1;                       /* no tables yet--level -1 */
-  w = -l;                       /* bits decoded == (l * h) */
+  w = 0;                        /* no bits decoded yet */
+  l.setOffset(-1, 0);
   u[0] = null;                  /* just to keep compilers happy */
   q.reset(null, null);          /* ditto */
   z = 0;                        /* ditto */
@@ -174,14 +173,13 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
     {
       /* here i is the Huffman code of length k bits for value *p */
       /* make tables up to required level */
-      while (k > w + l)
+      while (k > w + l.getOffset(h))
       {
-        h++;
-        w += l;                 /* previous table always l bits */
+        w += l.getOffset(h++);  /* add bits already decoded */
 
-        /* compute minimum size table less than or equal to l bits */
-        z = (z = g - w) > l ? l : z;  /* upper limit on table size */
-        if ((f = 1 << (j = k - w)) > a + 1)     /* try a k-w bit table */
+        /* compute minimum size table less than or equal to *m bits */
+        z = (z = g - w) > output.m ? output.m : z; /* upper limit */
+        if ((f = 1 << (j = k - w)) > a + 1) /* try a k-w bit table */
         {                       /* too few codes for k-w bit table */
           f -= a + 1;           /* deduct codes from patterns left */
           xp.reset(c, k);
@@ -192,7 +190,10 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
             f -= xp.get();      /* else deduct codes from patterns */
           }
         }
+        if (w + j > el && w < el)
+          j = el - w;           /* make EOB code end at table */
         z = 1 << j;             /* table entries for j-bit table */
+        l.setOffset(h, j);      /* set table size in stack */
 
         /* allocate and link in new table */
         q.reset(create_empty_huft_table(z + 1), 0);
@@ -204,10 +205,10 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
         if (h)
         {
           x[h] = i;             /* save pattern for backing up */
-          r.b = l;              /* bits to dump before this table */
-          r.e = 16 + j;         /* bits in this table */
-          r.v = q.clone(); /* pointer to this table */
-          j = i >> (w - l);     /* (get around Turbo C bug) */
+          r.b = l.getOffset(h - 1); /* bits to dump before this table */
+          r.e = 32 + j;         /* bits in this table */
+          r.v = q.clone();      /* pointer to this table */
+          j = (i & ((1 << w) - 1)) >> (w - l.getOffset(h-1));
           clone_huft(r, u[h - 1].getOffset(j)); /* connect to last table */
         }
       }
@@ -215,10 +216,10 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
       /* set up table entry in r */
       r.b = k - w;
       if (p.getIndex() >= n)
-        r.e = 99;               /* out of values--invalid code */
+        r.e = INVALID_CODE;     /* out of values--invalid code */
       else if (p.get() < s)
       {
-        r.e = p.get() < 256 ? 16 : 15; /* 256 is end-of-block code */
+        r.e = p.get() < 256 ? 32 : 31; /* 256 is end-of-block code */
         r.v = p.get();          /* simple code is just the value */
         p.add(1);
       }
@@ -240,14 +241,15 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
       i ^= j;
 
       /* backup over finished tables */
-      while ((i & ((1 << w) - 1)) != x[h])
+      while ((i & ((1 << w) - 1)) !== x[h])
       {
-        h--;                    /* don't need to update q */
-        w -= l;
+        w -= l.getOffset(--h); /* don't need to update q */
       }
     }
   }
 
+  /* return actual size of base table */
+  output.m = l.getOffset(0);
 
   /* Return true (1) if we were given an incomplete table */
   return (y !== 0 && g !== 1) ? 1 : 0;
