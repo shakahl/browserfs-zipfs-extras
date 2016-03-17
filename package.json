@@ -1,0 +1,26 @@
+{
+  "name": "decompress-implode",
+  "version": "0.0.1",
+  "description": "Decompress IMPLODEd data by EXPLODEing it.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jvilk/decompress-implode.git"
+  },
+  "keywords": [
+    "compression",
+    "decompression",
+    "implode",
+    "explode",
+    "zip",
+    "unzip"
+  ],
+  "author": "John Vilk (jvilk@cs.umass.edu)",
+  "bugs": {
+    "url": "https://github.com/jvilk/decompress-implode/issues"
+  },
+  "homepage": "https://github.com/jvilk/decompress-implode#readme",
+  "dependencies": {
+    "browserfs": "^0.5.12",
+    "crc-hash": "^0.2.2"
+  }
+}

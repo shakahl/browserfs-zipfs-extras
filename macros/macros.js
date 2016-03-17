@@ -28,12 +28,21 @@ macro NEXTBYTE {
 export NEXTBYTE;
 
 macro NEEDBITS {
-  rule { ($n, $byteBuff, $k, $b) } => { while($k<$n){$b|=(NEXTBYTE($byteBuff))<<$k;$k+=8;} }
+  rule { ($n, $byteBuff, $k, $b) } => {
+    console.log("NEEDBITS: " + $n + " k: " + $k + " b: " + $b);
+    while($k < $n) {
+      $b |= ((NEXTBYTE($byteBuff)) << $k);
+      $k += 8;
+    }
+  }
 }
 export NEEDBITS;
 
 macro DUMPBITS {
-  rule { ($n, $k, $b) } => { $b>>=$n;$k-=$n; }
+  rule { ($n, $k, $b) } => {
+    $b >>= $n;
+    $k -= $n;
+  }
 }
 export DUMPBITS;
 

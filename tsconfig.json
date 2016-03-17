@@ -7,7 +7,9 @@
     "outDir": "build"
   },
   "files": [
+    "typings/main.d.ts",
     "src/explode.ts",
+    "src/extract.ts",
     "src/bytebuff.ts",
     "src/unzip.ts",
     "src/inflate.ts",
