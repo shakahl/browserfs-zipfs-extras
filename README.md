@@ -6,6 +6,8 @@ Prereqs:
 
 ```
 $ npm i -g typescript sweet.js
+$ # In Git repository directory
+$ npm install
 ```
 
 Building:
