@@ -41,7 +41,7 @@ function create_empty_huft_table(n: number): huft[] {
  */
 function clone_huft(a: huft, b: huft) {
   b.e = a.e;
-  b.b = b.b;
+  b.b = a.b;
   if (typeof(a.v) === 'number') {
     b.v = a.v;
   } else {
@@ -197,7 +197,7 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
 
         /* allocate and link in new table */
         q.reset(create_empty_huft_table(z + 1), 0);
-        q.addInto(t, 1); /* link to list for huft_free() */
+        q.addInto(t, 1);        /* link to list for huft_free() */
         t = q.get().v as Ptr<huft>;
         u[h] = q.add(1).clone(); /* table starts after link */
 
@@ -232,8 +232,9 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
 
       /* fill code-like entries with r */
       f = 1 << (k - w);
-      for (j = i >> w; j < z; j += f)
+      for (j = i >> w; j < z; j += f) {
         clone_huft(r, q.getOffset(j));
+      }
 
       /* backwards increment the k-bit code i */
       for (j = 1 << (k - 1); i & j; j >>= 1)

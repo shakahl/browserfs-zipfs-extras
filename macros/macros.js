@@ -29,7 +29,6 @@ export NEXTBYTE;
 
 macro NEEDBITS {
   rule { ($n, $byteBuff, $k, $b) } => {
-    console.log("NEEDBITS: " + $n + " k: " + $k + " b: " + $b);
     while($k < $n) {
       $b |= ((NEXTBYTE($byteBuff)) << $k);
       $k += 8;

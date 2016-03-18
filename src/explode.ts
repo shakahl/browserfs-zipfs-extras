@@ -119,6 +119,7 @@ import ByteBuff from './bytebuff';
 import {mask_bits as __mask_bits__, get_slide, release_slide} from './unzip';
 import {flush, huft, huft_build} from './inflate';
 import Ptr from './ptr';
+import * as assert from 'assert';
 const mask_bits = __mask_bits__;
 
 // Macros
@@ -375,8 +376,10 @@ function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, t
       DUMPBITS(bdl, k, b)
       DECODEHUFT(td, bd, md, mask_bits, t, b, e, k, byteBuff) /* get coded distance high bits */
       d = w - d - (t.get().v as number); /* construct offset */
+      assert(typeof(t.get().v) === 'number');
       DECODEHUFT(tl, bl, ml, mask_bits, t, b, e, k, byteBuff) /* get coded length */
       n = t.get().v as number;
+      assert(typeof(t.get().v) === 'number');
       if (e) {
         NEEDBITS(8, byteBuff, k, b)
         n += b & 0xff;
@@ -401,7 +404,7 @@ function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, t
             do {
               slide[w++] = slide[d++];
             } while (--e);
-        if (w == wszimpl)
+        if (w === wszimpl)
         {
           if ((retval = flush(slide, output, outcnt, w)) !== 0)
             return retval;
@@ -467,7 +470,6 @@ export default function explode(general_purpose_bit_flag: number, compressedData
   /* With literal tree--minimum match length is 3 */
   if (general_purpose_bit_flag & 4)
   {
-    console.log("With literal tree...");
     bb = 9;                     /* base table size for literals */
     if ((r = get_tree(byteBuff, l, 256)) != 0)
       return r;
@@ -493,7 +495,6 @@ export default function explode(general_purpose_bit_flag: number, compressedData
   else
   /* No literal tree--minimum match length is 2 */
   {
-    console.log("Without literal tree...");
     tb = null;
     if ((r = get_tree(byteBuff, l, 64)) !== 0)
       return r;
@@ -511,7 +512,6 @@ export default function explode(general_purpose_bit_flag: number, compressedData
     return r;
   if (general_purpose_bit_flag & 2)      /* true if 8K */
   {
-    console.log('8K');
     bdl = 7;
     hb_output.m = bd;
     if ((r = huft_build(l, 64, 0, cpdist8, extra, hb_output)) !== 0)
@@ -524,7 +524,6 @@ export default function explode(general_purpose_bit_flag: number, compressedData
   }
   else                                        /* else 4K */
   {
-    console.log('4K')
     bdl = 6;
     hb_output.m = bd;
     if ((r = huft_build(l, 64, 0, cpdist4, extra, hb_output)) != 0)

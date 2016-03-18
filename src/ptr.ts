@@ -29,6 +29,10 @@ export default class Ptr<T> {
     return this._i;
   }
 
+  public getArray(): Arrayish<T> {
+    return this._arr;
+  }
+
   public addInto(ptr: Ptr<T>, n: number): Ptr<T> {
     ptr._i = this._i + n;
     ptr._arr = this._arr;
