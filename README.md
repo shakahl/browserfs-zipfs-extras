@@ -1,11 +1,13 @@
 ## `decompress-implode`: EXPLODE implementation in JavaScript
 
-A direct port of Info-Zip's EXPLODE algorithm to JavaScript.
+A direct port of Info-Zip's EXPLODE algorithm to JavaScript. [Based on the version in this release of Info-Zip.](https://downloads.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.tar.gz)
 
 Prereqs:
 
 ```
 $ npm i -g typescript sweet.js
+$ # In Git repository directory
+$ npm install
 ```
 
 Building:
