@@ -7,7 +7,7 @@
 import * as BrowserFS from 'browserfs';
 import * as fs from 'fs';
 import * as path from 'path';
-import explode from './explode';
+import explode = require('./explode');
 import * as crypto from 'crypto';
 const crcHash: typeof crypto = require('crc-hash');
 

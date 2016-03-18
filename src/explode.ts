@@ -439,7 +439,7 @@ function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, t
  * @param ucsize Uncompressed size of zip entry. If unspecified, outArray.byteLength is used.
  * @return 0 on success
  */
-export default function explode(general_purpose_bit_flag: number, compressedData: Uint8Array, output: Uint8Array, ucsize: number = output.byteLength): number {
+function explode(general_purpose_bit_flag: number, compressedData: Uint8Array, output: Uint8Array, ucsize: number = output.byteLength): number {
   let r: number;       /* return codes */
   let tb: Ptr<huft>;   /* literal code table */
   let tl: Ptr<huft>;   /* length code table */
@@ -547,3 +547,5 @@ export default function explode(general_purpose_bit_flag: number, compressedData
   }
   return r;
 }
+
+export = explode;

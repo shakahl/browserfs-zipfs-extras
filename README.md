@@ -2,6 +2,8 @@
 
 A direct port of Info-Zip's EXPLODE algorithm to JavaScript. [Based on the version in this release of Info-Zip.](https://downloads.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.tar.gz)
 
+It appears to work, but I need some test files that exercise the code base!
+
 Prereqs:
 
 ```
@@ -24,10 +26,6 @@ Running:
 ```
 $ node build/extract.js [path to zip file] [file to extract]
 ```
-
-Bugs:
-
-It doesn't work yet.
 
 Porting Comments:
 
