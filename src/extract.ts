@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import explode = require('./explode');
 import unshrink = require('./unshrink');
+import unreduce = require('./unreduce');
 import * as crypto from 'crypto';
 const crcHash: typeof crypto = require('crc-hash');
 
@@ -31,8 +32,8 @@ const flags = itemData.getFileData().getHeader().flags();
 const compressedData = itemData.getRawData();
 const output = new Uint8Array(ucsize);
 const method = itemData.compressionMethod();
-if (method !== 6 && method !== 1) {
-  console.log(`${process.argv[3]} is not IMPLODEd or SHRUNK. Expected 6 or 1 for compression method, received ${method}.`);
+if (!(method >= 1 && method <= 6)) {
+  console.log(`${process.argv[3]} is not IMPLODEd, REDUCEd, or SHRUNK. Expected 6 >= compressionMethod >= 1, received ${method}.`);
   process.exit(0);
 }
 const outputPath = path.resolve(`./${process.argv[3]}`);
@@ -47,9 +48,13 @@ let rv: number;
 if (method === 6) {
   console.log(`Exploding to ${outputPath}...`);
   rv = explode(flags, compressedData.subarray(0, csize), output, ucsize);
-} else {
+} else if (method === 1) {
   console.log(`Unshrinking to ${outputPath}...`);
   rv = unshrink(compressedData.subarray(0, csize), output, ucsize)
+} else {
+  console.log(`Reducing (factor ${method - 1}) to ${outputPath}...`);
+  rv = 0;
+  unreduce(method, compressedData.subarray(0, csize), output, ucsize)
 }
 
 console.log(`Return code: ${rv}

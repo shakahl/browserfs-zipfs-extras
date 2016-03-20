@@ -15,6 +15,7 @@
     "src/inflate.ts",
     "src/ptr.ts",
     "src/unzpriv.ts",
-    "src/unshrink.ts"
+    "src/unshrink.ts",
+    "src/unreduce.ts"
   ]
 }
