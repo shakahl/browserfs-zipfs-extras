@@ -54,7 +54,7 @@ if (method === 6) {
 } else {
   console.log(`Reducing (factor ${method - 1}) to ${outputPath}...`);
   rv = 0;
-  unreduce(method, compressedData.subarray(0, csize), output, ucsize)
+  unreduce(compressedData.subarray(0, csize), csize, output, ucsize, method - 1);
 }
 
 console.log(`Return code: ${rv}

@@ -1,222 +1,159 @@
-/*---------------------------------------------------------------------------
+/*
+PKWARE reduce decompression 0.1
+by Luigi Auriemma
+e-mail: me@aluigi.org
+web:    aluigi.org
 
-  unreduce.c
+---
+    Copyright 2015 Luigi Auriemma
 
-  The Reducing algorithm is actually a combination of two distinct algorithms.
-  The first algorithm compresses repeated byte sequences, and the second al-
-  gorithm takes the compressed stream from the first algorithm and applies a
-  probabilistic compression method.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-     * Copyright 1989 Samuel H. Smith;  All rights reserved
-     *
-     * Do not distribute modified versions without my permission.
-     * Do not remove or alter this notice or any other copyright notice.
-     * If you use this in your own program you must distribute source code.
-     * Do not use any of this in a commercial product.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  See the accompanying file "COPYING" in UnZip source and binary distributions
-  for further information.  This code is NOT used unless USE_SMITH_CODE is
-  explicitly defined (==> COPYRIGHT_CLEAN is not defined).
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 
-  ---------------------------------------------------------------------------*/
-
-import ByteBuff from './bytebuff';
+    http://www.gnu.org/licenses/gpl-2.0.txt
+*/
 import Ptr from './ptr';
-import {flush} from './inflate';
-import {get_slide, release_slide} from './unzpriv';
+import ByteBuff from './bytebuff';
 
-/**************************************/
-/*  UnReduce Defines, Typedefs, etc.  */
-/**************************************/
+const mask = new Uint8Array([
+    8,1,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+    5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8 ]);
 
-const DLE = 144;
+function reduce_decompress_B(X: number): number {
+  return mask[X];
+}
 
-// typedef uch f_array[64];        /* for followers[256][64] */
+function reduce_decompress_L(X: number, factor: number): number {
+  return X & ((1 << (8 - factor)) -1);
+}
 
+function reduce_decompress_F(X: number, factor: number): number {
+  if(reduce_decompress_L(X, factor) == reduce_decompress_L(-1, factor)) return 2;
+  return 3;
+}
 
-/*******************************/
-/*  UnReduce Global Constants  */
-/*******************************/
+function reduce_decompress_D(X: number, Y: number, factor: number): number {
+  return ((X >> (8 - factor)) * 256) + Y + 1;
+}
 
-const L_table = new Int16Array([0, 0x7f, 0x3f, 0x1f, 0x0f]);
+const DLE = 144;  // 0x90
 
-const D_shift = new Int16Array([0, 0x07, 0x06, 0x05, 0x04]);
-
-const D_mask = new Int16Array([0, 0x01, 0x03, 0x07, 0x0f]);
-
-const B_table = new Int16Array([
-8, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5,
- 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6,
- 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
- 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7,
- 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
- 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
- 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
- 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
- 8, 8, 8, 8]);
+function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, outsz: number, factor: number): number {
+  let inBuff = new ByteBuff(inArr);
+  let o = new Ptr(out, 0),
+    outl = new Ptr(out, outsz);
 
 
-/*************************/
-/*  Function unreduce()  */
-/*************************/
+  let p = new Ptr<number>(null, null);
+  let i: number,
+    j: number;
+  let C = 0,
+    V = 0,
+    I = 0,
+    Len = 0,
+    State = 0,
+    Last_Character = 0;
 
-function unreduce(compressionMethod: number, slide: Uint8Array, compressedData: ByteBuff, output: Uint8Array, ucsize: number): void   /* expand probabilistically reduced data */
-{
-    let lchar = 0;
-    let nchar: number;
-    let ExState = 0;
-    let V = 0;
-    let Len = 0;
-    let s = ucsize;  /* number of bytes left to decompress */
-    let w = 0;      /* position in output window slide[] */
-    let u = 1;      /* true if slide[] unflushed */
-    let Slen = new Uint8Array(256);
 
-    // f_array *followers = (f_array *)(slide + 0x4000);
-    let followers = new Ptr(slide, 0x4000);
-    let factor = compressionMethod - 1;
-    let outIndex = 0;
 
-    LoadFollowers(compressedData, followers, Slen);
+  let N = new Uint8Array(256),
+    S = new Uint8Array(256*64);
 
-    while (s > 0 /* && (!zipeof) */) {
-        if (Slen[lchar] == 0)
-            nchar = compressedData.readBits(8);   /* ; */
-        else {
-            nchar = compressedData.readBits(1);   /* ; */
-            if (nchar != 0)
-                nchar = compressedData.readBits(8);       /* ; */
+  for(j = 0xff; j >= 0; j--) {
+    N[j] = inBuff.readBits(6);
+    for(i = 0; i < N[j]; i++) {
+      S[(j * 64) + i] = inBuff.readBits(8);
+    }
+  }
+
+  while (!inBuff.zipeof() && (o.getIndex() < outl.getIndex())) {
+
+    if (N[Last_Character] == 0) {
+      C = inBuff.readBits(8);
+    } else {
+      if (inBuff.readBits(1)) {
+        C = inBuff.readBits(8);
+      } else {
+        I = inBuff.readBits(reduce_decompress_B(N[Last_Character]));
+        C = S[(64 * Last_Character) + I];
+      }
+    }
+    Last_Character = C;
+
+
+
+    switch(State) {
+
+      case 0:
+        if (C != DLE) {
+          if (o.getIndex() < outl.getIndex()) {
+            o.set(C);
+            o.add(1);
+          }
+        } else {
+          State = 1;
+        }
+        break;
+
+      case 1:
+        if (C != 0) {
+          V = C;
+          Len = reduce_decompress_L(V, factor);
+          State = reduce_decompress_F(Len, factor);
+        } else {
+          if (o < outl) {
+            o.set(DLE);
+            o.add(1);
+          }
+          State = 0;
+        }
+        break;
+
+      case 2:
+        Len += C;
+        State = 3;
+        break;
+
+      case 3:
+        o.addInto(p, -(reduce_decompress_D(V, C, factor) & 0x3fff));   // Winzip uses a 0x3fff mask here
+        for (i = 0; i < (Len + 3); i++, p.add(1)) {
+          if (o.getIndex() < outl.getIndex()) {
+            if (p.getIndex() < 0) {
+              o.set(0);
+              o.add(1);
+            }
             else {
-                let bitsneeded = B_table[Slen[lchar]];
-                let follower = compressedData.readBits(bitsneeded);   /* ; */
-                nchar = followers.getOffset((64 * lchar) + follower);
+              o.set(p.get());
+              o.add(1);
             }
+          }
         }
-        /* expand the resulting byte */
-        switch (ExState) {
+        State = 0;
+        break;
 
-        case 0:
-            if (nchar != DLE) {
-                s--;
-                slide[w++] = nchar;
-                if (w == 0x4000) {
-                    flush(slide, output, outIndex, w);
-                    outIndex += w;
-                    w = u = 0;
-                }
-            }
-            else
-                ExState = 1;
-            break;
+        default:
+          break;
+      }
+  }
 
-        case 1:
-            if (nchar != 0) {
-                V = nchar;
-                Len = V & L_table[factor];
-                if (Len == L_table[factor])
-                    ExState = 2;
-                else
-                    ExState = 3;
-            } else {
-                s--;
-                slide[w++] = DLE;
-                if (w == 0x4000)
-                {
-                  flush(slide, output, outIndex, w);
-                  outIndex += w;
-                  w = u = 0;
-                }
-                ExState = 0;
-            }
-            break;
-
-        case 2:{
-                Len += nchar;
-                ExState = 3;
-            }
-            break;
-
-        case 3:{
-                let e: number;
-                let n = Len + 3;
-                let d = w - ((((V >> D_shift[factor]) &
-                               D_mask[factor]) << 8) + nchar + 1);
-
-                s -= n;
-                do {
-                  n -= (e = (e = 0x4000 - ((d &= 0x3fff) > w ? d : w)) > n ?
-                        n : e);
-                  if (u && w <= d)
-                  {
-                    for (let i = 0; i < e; i++) {
-                      slide[w + i] = 0;
-                    }
-                    w += e;
-                    d += e;
-                  }
-                  else
-                    if (w - d < e)      /* (assume unsigned comparison) */
-                      do {              /* slow to avoid memcpy() overlap */
-                        slide[w++] = slide[d++];
-                      } while (--e);
-                    else
-                    {
-                      for (let i = 0; i < e; i++) {
-                        slide[w + i] = slide[d + i];
-                      }
-                      w += e;
-                      d += e;
-                    }
-                  if (w == 0x4000)
-                  {
-                    flush(slide, output, outIndex, w);
-                    outIndex += w;
-                    w = u = 0;
-                  }
-                } while (n);
-
-                ExState = 0;
-            }
-            break;
-        }
-
-        /* store character for next iteration */
-        lchar = nchar;
-    }
-
-    /* flush out slide */
-    flush(slide, output, outIndex, w);
-    outIndex += w;
+  return o.getIndex();
 }
 
-
-
-
-
-/******************************/
-/*  Function LoadFollowers()  */
-/******************************/
-
-function LoadFollowers(compressedData: ByteBuff, followers: Ptr<number>, Slen: Uint16Array): void
-{
-    let x: number;
-    let i: number;
-
-    for (x = 255; x >= 0; x--) {
-        Slen[x] = compressedData.readBits(6);   /* ; */
-        for (i = 0; i < Slen[x]; i++)
-            followers.setOffset((64 * x) + i, compressedData.readBits(8));   /* ; */
-    }
-}
-
-export = function(compressionMethod: number, compressedData: Uint8Array, output: Uint8Array, ucsize: number = output.byteLength): void {
-  const slide = get_slide();
-  unreduce(compressionMethod, slide, new ByteBuff(compressedData), output, ucsize);
-  release_slide(slide);
-}
+export = reduce_decompress;
