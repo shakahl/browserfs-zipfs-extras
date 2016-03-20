@@ -116,7 +116,8 @@
 
 
 import ByteBuff from './bytebuff';
-import {mask_bits as __mask_bits__, get_slide, release_slide} from './unzip';
+import {mask_bits as __mask_bits__} from './unzip';
+import {get_slide, release_slide} from './unzpriv';
 import {flush, huft, huft_build} from './inflate';
 import Ptr from './ptr';
 import * as assert from 'assert';
@@ -216,7 +217,7 @@ function get_tree(byteBuff: ByteBuff, l: number[], n: number): number {
  * @param bb number of bits encoded by distance table
  * @param bdl number of distance low bits
  */
-function explode_lit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tb: Ptr<huft>, tl: Ptr<huft>, td: Ptr<huft>, bb: number, bl: number, bd: number, bdl: number): number {
+function explode_lit(slide: Uint8Array, byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tb: Ptr<huft>, tl: Ptr<huft>, td: Ptr<huft>, bb: number, bl: number, bd: number, bdl: number): number {
   let s: number;        /* bytes to decompress */
   let e: number;        /* table entry flag/number of extra bits */
   let n: number,        /* length and index for copy */
@@ -231,7 +232,6 @@ function explode_lit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tb:
   let k: number;        /* number of bits in bit buffer */
   let u: number;        /* true if unflushed */
   let retval = 0;       /* error code returned: initialized to "no error" */
-  const slide = get_slide();
   let outcnt = 0;
   let _b: number;
 
@@ -310,7 +310,6 @@ function explode_lit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tb:
   if ((retval = flush(slide, output, outcnt, w)) !== 0)
     return retval;
   outcnt += w;
-  release_slide(slide);
   return byteBuff.eof() ? 0 : 5;         /* should have read csize bytes */
 }
 
@@ -324,7 +323,7 @@ function explode_lit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tb:
  * @param bb number of bits encoded by distance table
  * @param bdl number of distance low bits
  */
-function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tl: Ptr<huft>, td: Ptr<huft>, bl: number, bd: number, bdl: number): number {
+function explode_nolit(slide: Uint8Array, byteBuff: ByteBuff, output: Uint8Array, ucsize: number, tl: Ptr<huft>, td: Ptr<huft>, bl: number, bd: number, bdl: number): number {
   let s: number;           /* bytes to decompress */
   let e: number;           /* table entry flag/number of extra bits */
   let n: number,           /* length and index for copy */
@@ -338,7 +337,6 @@ function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, t
   let k: number;           /* number of bits in bit buffer */
   let u: number;           /* true if unflushed */
   let retval = 0;          /* error code returned: initialized to "no error" */
-  const slide = get_slide();
   let outcnt = 0;
   let _b: number;
 
@@ -419,7 +417,6 @@ function explode_nolit(byteBuff: ByteBuff, output: Uint8Array, ucsize: number, t
   if ((retval = flush(slide, output, outcnt, w)) !== 0)
     return retval;
   outcnt += w;
-  release_slide(slide);
   return byteBuff.eof() ? 0 : 5;         /* should have read csize bytes */
 }
 
@@ -540,11 +537,13 @@ function explode(general_purpose_bit_flag: number, compressedData: Uint8Array, o
     return r;
   }
 
+  const slide = get_slide();
   if (tb !== null) {
-    r = explode_lit(byteBuff, output, ucsize, tb, tl, td, bb, bl, bd, bdl);
+    r = explode_lit(slide, byteBuff, output, ucsize, tb, tl, td, bb, bl, bd, bdl);
   } else {
-    r = explode_nolit(byteBuff, output, ucsize, tl, td, bl, bd, bdl);
+    r = explode_nolit(slide, byteBuff, output, ucsize, tl, td, bl, bd, bdl);
   }
+  release_slide(slide);
   return r;
 }
 

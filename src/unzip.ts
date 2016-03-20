@@ -4,20 +4,10 @@ export const mask_bits: number[] = [
     0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
 ];
 
-
-const slideFreeList: Uint8Array[] = [];
-
-// slide = (byte *)calloc(8193, sizeof(short)+sizeof(char)+sizeof(char));
-// 8193 x 4 bytes
-// Changed into a function to avoid global state.
-export function get_slide(): Uint8Array {
-  if (slideFreeList.length === 0) {
-    return new Uint8Array(8193 * 4);
-  } else {
-    return slideFreeList.pop();
-  }
-}
-
-export function release_slide(slide: Uint8Array): void {
-  slideFreeList.push(slide);
+export const enum PK_RETURN_CODE {
+  OK = 0,   /* no error */
+  WARN = 1,   /* warning error */
+  ERR = 2,   /* error in zipfile */
+  BADERR = 3,   /* severe error in zipfile */
+  PK_EOF = 51   /* unexpected EOF */
 }
