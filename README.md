@@ -1,4 +1,4 @@
-# BrowserFS ZipFS Extras v1.0.0
+# BrowserFS ZipFS Extras v1.0.1
 
 Adds the following decompression algorithms to BrowserFS, which were used in
 older versions of PKZip:
