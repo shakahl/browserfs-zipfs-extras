@@ -66,7 +66,7 @@
 
 import Ptr from './ptr';
 import {HSIZE, MAX_BITS, get_work_struct_unshrink, release_work_struct_unshrink, UnshrinkWorkStruct} from './unzpriv';
-import {mask_bits, PK_RETURN_CODE as RETURN} from './unzip';
+import {PK_RETURN_CODE as RETURN} from './unzip';
 import ByteBuff from './bytebuff';
 
 /*
@@ -107,7 +107,6 @@ function unshrink(workStruct: UnshrinkWorkStruct, compressedData: ByteBuff, outp
   let codesize = 9, len: number;
   let code: number, oldcode: number, curcode: number;
   let lastfreecode: number;
-  let outbufsiz: number = output.byteLength;
   let outptr = new Ptr(output, 0);
 
 
@@ -259,7 +258,7 @@ function unshrink(workStruct: UnshrinkWorkStruct, compressedData: ByteBuff, outp
 /* Function partial_clear() */      /* no longer recursive... */
 /****************************/
 
-function partial_clear(parent: Uint8Array, FLAG_BITS: Uint8Array, lastcodeused: number): void
+function partial_clear(parent: Int16Array, FLAG_BITS: Int16Array, lastcodeused: number): void
 {
     let code: number;
 
@@ -286,7 +285,7 @@ function partial_clear(parent: Uint8Array, FLAG_BITS: Uint8Array, lastcodeused: 
     return;
 }
 
-export = function(compressedData: Uint8Array, output: Uint8Array, ucsize: number = output.byteLength): number {
+export default function(compressedData: Uint8Array, output: Uint8Array, ucsize: number = output.byteLength): number {
   const ws = get_work_struct_unshrink();
   const rv = unshrink(ws, new ByteBuff(compressedData), output, ucsize);
   release_work_struct_unshrink(ws);

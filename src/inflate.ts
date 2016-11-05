@@ -252,6 +252,6 @@ export function huft_build(b: number[], n: number, s: number, d: number[], e: nu
   /* return actual size of base table */
   output.m = l.getOffset(0);
 
-  /* Return true (1) if we were given an incomplete table */
   return (y !== 0 && g !== 1) ? 1 : 0;
+  /* Return true (1) if we were given an incomplete table */
 }

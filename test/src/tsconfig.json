@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "module": "none",
+    "sourceMap": true,
+    "lib": ["es2015", "es2016", "es2017", "dom"],
+    "outDir": "../../build/test",
+    "typeRoots": [
+      "../../node_modules/@types"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "../../node_modules/browserfs/dist/browserfs.d.ts"
+  ]
+}

@@ -1,33 +1,49 @@
-## `decompress-implode`: EXPLODE implementation in JavaScript
+# BrowserFS ZipFS Extras
 
-A direct port of Info-Zip's EXPLODE algorithm to JavaScript. [Based on the version in this release of Info-Zip.](https://downloads.sourceforge.net/project/infozip/UnZip%206.x%20%28latest%29/UnZip%206.0/unzip60.tar.gz)
+Adds the following decompression algorithms to BrowserFS, which were used in
+older versions of PKZip:
 
-It appears to work, but I need some test files that exercise the code base!
+* EXPLODE and UNSHRINK (ported from Info-Zip's GPL2'd code)
+* UNREDUCE (ported from [this GPL2 code](http://aluigi.altervista.org/papers/unreduce.c))
 
-Prereqs:
+Although BrowserFS is licensed under the MIT license, this add-on library is
+based on GPL2 code and is provided under the GPL2 license.
+
+## Using
+
+### Browser
+
+Simply include [browserfs.js](https://github.com/jvilk/browserfs) and `browserfs-zipfs-extras.js` on the same page, and BrowserFS will know how to decompress these extra algorithms.
+Make sure you include `browserfs.js` *first*.
+
+### Node
+
+Add both `browserfs` and `browserfs-zipfs-extras` as dependencies of your project. Then, simply `require` `browserfs-zipfs-extras` before you begin using `browserfs`.
+
+```javascript
+const BrowserFS = require('browserfs');
+require('browserfs-zipfs-extras');
+// Now you can use BrowserFS.
+```
+
+## Building
+
+Requires a reasonably recent version of Node. Run:
 
 ```
-$ npm i -g typescript sweet.js
-$ # In Git repository directory
 $ npm install
 ```
 
-Building:
+## Running Tests
+
+**NOTE: You must have [Git LFS](https://git-lfs.github.com/) installed and use it to clone the repository.**
+We use Git LFS to manage our test fixtures, which are a bunch of zip files.
 
 ```
-$ tsc
-$ sjs -m ./macros/macros.js ./build/explode.js -o ./build/explode.js
+$ npm test
 ```
 
-...or simply run `./make.sh`
-
-Running:
-
-```
-$ node build/extract.js [path to zip file] [file to extract]
-```
-
-Porting Comments:
+## Porting Comments
 
 We emulate pointers and pointer arithmetic with the `Ptr` `class`, which
 takes an array and an offset into the array. `extract.ts` and `inflate.ts`
@@ -36,7 +52,5 @@ to iterate through table values!
 
 To reduce object allocations, most `Ptr` manipulations edit the value of
 an existing `Ptr` rather than create a new one. As a result, developers
-must be cognizant of `Ptr` aliasing; if two places contain the same `Ptr`
-object, then manipulating one will change the other!
-
-It's possible that this is the current source of a bug.
+maintaining this project must be cognizant of `Ptr` aliasing; if two places
+contain the same `Ptr` object, then manipulating one will change the other!

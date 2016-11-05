@@ -116,16 +116,12 @@
 
 
 import ByteBuff from './bytebuff';
-import {mask_bits as __mask_bits__} from './unzip';
+import {mask_bits} from './unzip';
 import {get_slide, release_slide} from './unzpriv';
 import {flush, huft, huft_build} from './inflate';
 import Ptr from './ptr';
-import * as assert from 'assert';
-const mask_bits = __mask_bits__;
 
 // Macros
-declare function IS_INVALID_CODE(c: number): boolean;
-declare function NEXTBYTE(byteBuff: ByteBuff): number;
 declare function NEEDBITS(n: number, byteBuff: ByteBuff, k: number, b: number): void;
 declare function DUMPBITS(n: number, k: number, b: number): void;
 declare function DECODEHUFT(htab: Ptr<huft>, bits: number, mask: number, mask_bits: number[], t: Ptr<huft>, b: number, e: number, k: number, byteBuff: ByteBuff): void;
@@ -233,7 +229,6 @@ function explode_lit(slide: Uint8Array, byteBuff: ByteBuff, output: Uint8Array, 
   let u: number;        /* true if unflushed */
   let retval = 0;       /* error code returned: initialized to "no error" */
   let outcnt = 0;
-  let _b: number;
 
 
   /* explode the coded data */
@@ -338,7 +333,6 @@ function explode_nolit(slide: Uint8Array, byteBuff: ByteBuff, output: Uint8Array
   let u: number;           /* true if unflushed */
   let retval = 0;          /* error code returned: initialized to "no error" */
   let outcnt = 0;
-  let _b: number;
 
   /* explode the coded data */
   b = k = w = 0;                /* initialize bit buffer, window */
@@ -374,10 +368,10 @@ function explode_nolit(slide: Uint8Array, byteBuff: ByteBuff, output: Uint8Array
       DUMPBITS(bdl, k, b)
       DECODEHUFT(td, bd, md, mask_bits, t, b, e, k, byteBuff) /* get coded distance high bits */
       d = w - d - (t.get().v as number); /* construct offset */
-      assert(typeof(t.get().v) === 'number');
+      //assert(typeof(t.get().v) === 'number');
       DECODEHUFT(tl, bl, ml, mask_bits, t, b, e, k, byteBuff) /* get coded length */
       n = t.get().v as number;
-      assert(typeof(t.get().v) === 'number');
+      //assert(typeof(t.get().v) === 'number');
       if (e) {
         NEEDBITS(8, byteBuff, k, b)
         n += b & 0xff;
@@ -547,4 +541,4 @@ function explode(general_purpose_bit_flag: number, compressedData: Uint8Array, o
   return r;
 }
 
-export = explode;
+export default explode;

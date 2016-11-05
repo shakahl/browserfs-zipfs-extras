@@ -41,11 +41,11 @@ function reduce_decompress_B(X: number): number {
 }
 
 function reduce_decompress_L(X: number, factor: number): number {
-  return X & ((1 << (8 - factor)) -1);
+  return X & ((1 << (8 - factor)) - 1);
 }
 
 function reduce_decompress_F(X: number, factor: number): number {
-  if(reduce_decompress_L(X, factor) == reduce_decompress_L(-1, factor)) return 2;
+  if(reduce_decompress_L(X, factor) === reduce_decompress_L(-1, factor)) return 2;
   return 3;
 }
 
@@ -55,10 +55,9 @@ function reduce_decompress_D(X: number, Y: number, factor: number): number {
 
 const DLE = 144;  // 0x90
 
-function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, outsz: number, factor: number): number {
+export default function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, outsz: number, factor: number): number {
   let inBuff = new ByteBuff(inArr);
-  let o = new Ptr(out, 0),
-    outl = new Ptr(out, outsz);
+  let o = new Ptr(out, 0);
 
 
   let p = new Ptr<number>(null, null);
@@ -83,9 +82,9 @@ function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, out
     }
   }
 
-  while (!inBuff.zipeof() && (o.getIndex() < outl.getIndex())) {
+  while (!inBuff.zipeof() && (o.getIndex() < outsz)) {
 
-    if (N[Last_Character] == 0) {
+    if (N[Last_Character] === 0) {
       C = inBuff.readBits(8);
     } else {
       if (inBuff.readBits(1)) {
@@ -102,8 +101,8 @@ function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, out
     switch(State) {
 
       case 0:
-        if (C != DLE) {
-          if (o.getIndex() < outl.getIndex()) {
+        if (C !== DLE) {
+          if (o.getIndex() < outsz) {
             o.set(C);
             o.add(1);
           }
@@ -113,12 +112,12 @@ function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, out
         break;
 
       case 1:
-        if (C != 0) {
+        if (C !== 0) {
           V = C;
           Len = reduce_decompress_L(V, factor);
           State = reduce_decompress_F(Len, factor);
         } else {
-          if (o < outl) {
+          if (o.getIndex() < outsz) {
             o.set(DLE);
             o.add(1);
           }
@@ -134,7 +133,7 @@ function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, out
       case 3:
         o.addInto(p, -(reduce_decompress_D(V, C, factor) & 0x3fff));   // Winzip uses a 0x3fff mask here
         for (i = 0; i < (Len + 3); i++, p.add(1)) {
-          if (o.getIndex() < outl.getIndex()) {
+          if (o.getIndex() < outsz) {
             if (p.getIndex() < 0) {
               o.set(0);
               o.add(1);
@@ -148,12 +147,10 @@ function reduce_decompress(inArr: Uint8Array, insz: number, out: Uint8Array, out
         State = 0;
         break;
 
-        default:
-          break;
-      }
+      default:
+        break;
+    }
   }
 
   return o.getIndex();
 }
-
-export = reduce_decompress;
