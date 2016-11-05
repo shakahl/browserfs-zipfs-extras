@@ -1,6 +1,6 @@
 {
   "name": "browserfs-zipfs-extras",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adds EXPLODE, UNSHRINK, and UNREDUCE support to BrowserFS's ZipFS",
   "license": "GPL-2.0",
   "main": "dist/browserfs-zipfs-extras-node.js",
