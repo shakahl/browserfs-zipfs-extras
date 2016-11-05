@@ -34,7 +34,7 @@ module.exports = function(configSetter) {
     concurrency: 1,
     browsers: installedBrowsers,
     captureTimeout: 60000,
-    singleRun: false,
+    singleRun: true,
     urlRoot: '/',
     browserNoActivityTimeout: 30000,
     browserDisconnectTimeout: 10000,

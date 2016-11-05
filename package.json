@@ -2,7 +2,7 @@
   "name": "browserfs-zipfs-extras",
   "version": "1.0.0",
   "description": "Extra decompression routines for BrowserFS's ZipFS",
-  "license": "GPL2",
+  "license": "GPL-2.0",
   "main": "dist/browserfs-zipfs-extras-node.js",
   "repository": {
     "type": "git",
@@ -38,7 +38,7 @@
   },
   "homepage": "https://github.com/jvilk/decompress-implode#readme",
   "dependencies": {
-    "browserfs": "^1.0"
+    "browserfs": ">=1.1"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -46,7 +46,6 @@
     "@types/filesystem": "0.0.28",
     "@types/mocha": "^2.2.32",
     "@types/node": "6.0.33",
-    "browserfs": "^0.5.13",
     "chai": "^3.5.0",
     "detect-browsers": "^2.0.0",
     "js-crc": "^0.1.0",
