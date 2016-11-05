@@ -1,12 +1,12 @@
 {
   "name": "browserfs-zipfs-extras",
   "version": "1.0.0",
-  "description": "Extra decompression routines for BrowserFS's ZipFS",
+  "description": "Adds EXPLODE, UNSHRINK, and UNREDUCE support to BrowserFS's ZipFS",
   "license": "GPL-2.0",
   "main": "dist/browserfs-zipfs-extras-node.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jvilk/decompress-implode.git"
+    "url": "git+https://github.com/jvilk/browserfs-zipfs-extras.git"
   },
   "scripts": {
     "build:tsc": "tsc -p src",
@@ -34,9 +34,9 @@
   ],
   "author": "John Vilk (jvilk@cs.umass.edu)",
   "bugs": {
-    "url": "https://github.com/jvilk/decompress-implode/issues"
+    "url": "https://github.com/jvilk/browserfs-zipfs-extras/issues"
   },
-  "homepage": "https://github.com/jvilk/decompress-implode#readme",
+  "homepage": "https://github.com/jvilk/browserfs-zipfs-extras#readme",
   "dependencies": {
     "browserfs": ">=1.1"
   },
