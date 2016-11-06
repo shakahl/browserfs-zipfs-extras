@@ -1,5 +1,10 @@
 # BrowserFS ZipFS Extras v1.0.1
 
+[![Build Status](https://travis-ci.org/jvilk/browserfs-zipfs-extras.svg?branch=master)](https://travis-ci.org/jvilk/browserfs-zipfs-extras)
+[![NPM version](https://badge.fury.io/js/browserfs-zipfs-extras.svg)](http://badge.fury.io/js/browserfs-zipfs-extras)
+[![david-dm-status-badge](https://david-dm.org/jvilk/browserfs-zipfs-extras.svg)](https://david-dm.org/jvilk/browserfs-zipfs-extras#info=dependencies&view=table)
+[![david-dm-status-badge](https://david-dm.org/jvilk/browserfs-zipfs-extras/dev-status.svg)](https://david-dm.org/jvilk/browserfs-zipfs-extras#info=devDependencies&view=table)
+
 **Note: Requires BrowserFS v1.1 and up!**
 
 Adds the following decompression algorithms to BrowserFS, which were used in
