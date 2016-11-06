@@ -13,7 +13,7 @@
     "build:sweet": "sjs -c -m ./macros/macros.js ./build/browserfs-zipfs-extras.js -o ./dist/browserfs-zipfs-extras.js",
     "build:node:sweet": "sjs -c -m ./macros/macros.js ./build/browserfs-zipfs-extras-node.js -o ./dist/browserfs-zipfs-extras-node.js",
     "build:fix-sweet-maps": "node scripts/fix-sweet-maps.js",
-    "build:merge-source-maps": "merge-source-maps --inline-sources dist/*.js",
+    "build:merge-source-maps": "merge-source-maps --inline-sources dist/browserfs-zipfs-extras.js dist/browserfs-zipfs-extras-node.js",
     "build:mkdir": "mkdirp dist",
     "build:rollup": "rollup -c rollup.config.js",
     "build:node:rollup": "rollup -c rollup.node.config.js",
